@@ -609,18 +609,16 @@ class ActivityCallbacksImplementation implements AndroidActivityCallbacks {
     private _rootView: View;
 
     @profile
-    public onCreate(activity: android.app.Activity, savedInstanceState: android.os.Bundle, superFunc: Function): void {
-        if (traceEnabled()) {
-            traceWrite(`Activity.onCreate(${savedInstanceState})`, traceCategories.NativeLifecycle);
-        }
-
+    private notifyLaunch(activity: android.app.Activity, intent: android.content.Intent): View {
         const app = application.android;
-        const intent = activity.getIntent();
         const launchArgs: application.LaunchEventData = { eventName: application.launchEvent, object: app, android: intent };
         application.notify(launchArgs);
+        return launchArgs.root;
+    }
 
+    @profile
+    private getSavedStateFrame(savedInstanceState: android.os.Bundle, intent: android.content.Intent): View {
         let frameId = -1;
-        let rootView = launchArgs.root;
         const extras = intent.getExtras();
 
         // We have extras when we call - new Frame().navigate();
@@ -641,21 +639,51 @@ class ActivityCallbacksImplementation implements AndroidActivityCallbacks {
         let frame: Frame;
         let navParam;
         if (frameId >= 0) {
-            rootView = getFrameById(frameId);
+            return getFrameById(frameId);
         }
 
-        if (!rootView) {
-            navParam = application.getMainEntry();
+        return null;
+    }
 
-            if (navParam) {
-                frame = new Frame();
-            } else {
-                // TODO: Throw an exception?
-                throw new Error("A Frame must be used to navigate to a Page.");
-            }
-
-            rootView = frame;
+    @profile
+    private createNewFrame(): Frame {
+        if (application.getMainEntry()) {
+            return new Frame();
+        } else {
+            throw new Error("A Frame must be used to navigate to a Page.");
         }
+    }
+
+    @profile
+    private setupUI(activity: android.app.Activity): void {
+        // Initialize native visual tree;
+        this._rootView._setupUI(activity);
+    }
+
+    @profile
+    private setContentView(activity: android.app.Activity): void {
+        activity.setContentView(this._rootView.nativeViewProtected, new org.nativescript.widgets.CommonLayoutParams());
+    }
+
+    @profile
+    newFrameNavigate(): void {
+        const navParam = application.getMainEntry();
+        (<Frame>this._rootView).navigate(navParam);
+    }
+
+    @profile
+    public onCreate(activity: android.app.Activity, savedInstanceState: android.os.Bundle, superFunc: Function): void {
+        if (traceEnabled()) {
+            traceWrite(`Activity.onCreate(${savedInstanceState})`, traceCategories.NativeLifecycle);
+        }
+
+        const intent = activity.getIntent();
+
+        const launchEventRootView = this.notifyLaunch(activity, intent);
+        const savedStateRootView = this.getSavedStateFrame(savedInstanceState, intent);
+
+        this._rootView = savedStateRootView || launchEventRootView;
+        const isNewFrame = !this._rootView && (this._rootView = this.createNewFrame());
 
         // If there is savedInstanceState this call will recreate all fragments that were previously in the navigation.
         // We take care of associating them with a Page from our backstack in the onAttachFragment callback.
@@ -665,14 +693,11 @@ class ActivityCallbacksImplementation implements AndroidActivityCallbacks {
         let isRestart = !!savedInstanceState && activityInitialized;
         superFunc.call(activity, isRestart ? savedInstanceState : null);
 
-        this._rootView = rootView;
+        this.setupUI(activity);
+        this.setContentView(activity);
 
-        // Initialize native visual tree;
-        rootView._setupUI(activity);
-        activity.setContentView(rootView.nativeViewProtected, new org.nativescript.widgets.CommonLayoutParams());
-        // frameId is negative w
-        if (frame) {
-            frame.navigate(navParam);
+        if (isNewFrame) {
+            this.newFrameNavigate();
         }
 
         activityInitialized = true;
