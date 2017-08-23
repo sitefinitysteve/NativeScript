@@ -131,8 +131,18 @@ export class ScrollView extends ScrollViewBase {
                     scrollX: newScrollX / layout.getDisplayDensity(),
                     scrollY: newScrollY / layout.getDisplayDensity()
                 });
+
                 this._lastScrollX = newScrollX;
                 this._lastScrollY = newScrollY;
+            }
+
+            if (this.scrollableHeight == this.verticalOffset) {
+                this.notify(<ScrollEventData>{
+                    object: this,
+                    eventName: ScrollViewBase.scrollendEvent,
+                    scrollX: newScrollX / layout.getDisplayDensity(),
+                    scrollY: newScrollY / layout.getDisplayDensity()
+                });
             }
         }
     }

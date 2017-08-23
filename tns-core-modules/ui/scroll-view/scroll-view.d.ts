@@ -13,6 +13,7 @@ export class ScrollView extends ContentView {
      * String value used when hooking to scroll event.
      */
     public static scrollEvent: string;
+    public static scrollendEvent: string;
 
     /**
      * Gets a value that contains the vertical offset of the scrolled content.
@@ -70,6 +71,11 @@ export class ScrollView extends ContentView {
      * Raised when a scroll event occurs.
      */
     on(event: "scroll", callback: (args: ScrollEventData) => void, thisArg?: any);
+
+    /**
+     * Raised when a scrollview reaches the bottom.
+     */
+    on(event: "scrollend", callback: (args: ScrollEventData) => void, thisArg?: any);
 
     _onOrientationChanged();
 }

@@ -7,6 +7,7 @@ export * from "../content-view";
 export abstract class ScrollViewBase extends ContentView implements ScrollViewDefinition {
     private _scrollChangeCount: number = 0;
     public static scrollEvent = "scroll";
+    public static scrollendEvent = "scrollend";
 
     public orientation: Orientation;
     public scrollBarIndicatorVisible: boolean;
@@ -85,6 +86,7 @@ export abstract class ScrollViewBase extends ContentView implements ScrollViewDe
 export interface ScrollViewBase {
     on(eventNames: string, callback: (data: EventData) => void, thisArg?: any);
     on(event: "scroll", callback: (args: ScrollEventData) => void, thisArg?: any);
+    on(event: "scrollend", callback: (args: ScrollEventData) => void, thisArg?: any);
 }
 
 const converter = makeParser<Orientation>(makeValidator("horizontal", "vertical"));
