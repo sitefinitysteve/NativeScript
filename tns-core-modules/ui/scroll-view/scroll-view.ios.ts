@@ -33,21 +33,6 @@ class UIScrollViewDelegateImpl extends NSObject implements UIScrollViewDelegate 
         }
     }
 
-    public scrollViewWillEndDragging(sv: UIScrollView, velocity: CGPoint, targetContentOffset: interop.Pointer | interop.Reference<CGPoint>): void {
-        let owner = this._owner.get();
-        if (owner) {
-            console.log("End drag");
-            console.log(velocity);
-            console.log(targetContentOffset);
-            owner.notify(<ScrollEventData>{
-                object: owner,
-                eventName: ScrollViewBase.dragendEvent,
-                scrollX: owner.horizontalOffset,
-                scrollY: owner.verticalOffset
-            });
-        }
-    }
-
     public static ObjCProtocols = [UIScrollViewDelegate];
 }
 
